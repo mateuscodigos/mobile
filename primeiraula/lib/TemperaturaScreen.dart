@@ -11,8 +11,17 @@ class _TemperaturaScreenState extends State<TemperaturaScreen> {
   final _controllerCelsius = TextEditingController();
   String _resultado = '';
 
-  
-
+  void _converter() {
+    if (_formKey.currentState!.validate()) {
+      // Converte a temperatura (substitui vírgula por ponto para parse)
+      final celsius = double.parse(_controllerCelsius.text.replaceAll(',', '.'));
+      final fahrenheit = (celsius * 9/5) + 32;
+      
+      setState(() {
+        _resultado = '${celsius.toStringAsFixed(1)}°C = ${fahrenheit.toStringAsFixed(1)}°F';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,5 +65,11 @@ class _TemperaturaScreenState extends State<TemperaturaScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controllerCelsius.dispose();
+    super.dispose();
   }
 }
