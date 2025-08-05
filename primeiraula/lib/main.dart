@@ -1,49 +1,33 @@
 import 'package:flutter/material.dart';
 import 'temperaturaScreen.dart';
 
-void main() {
-  runApp(ConversorApp());
-}
-
-class ConversorApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Conversor Real → Dólar',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo, 
-        scaffoldBackgroundColor: Color(0xFFE3F2FD), 
-        elevatedButtonTheme: ElevatedButtonThemeData( 
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF4FC3F7), 
-            foregroundColor: Colors.white, 
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme( 
-          filled: true,
-          fillColor: Color(0xFFFFFFFF), 
-          border: OutlineInputBorder(),
-          labelStyle: TextStyle(color: const Color.fromARGB(255, 165, 56, 56)),
-        ),
-        textTheme: TextTheme( //
-          bodyLarge: TextStyle(color: const Color.fromARGB(255, 165, 56, 56)),
-          bodyMedium: TextStyle(color: const Color.fromARGB(255, 165, 56, 56)),
-        ),
-      ),
-      home: ConversorPage(),
-    );
-  }
-}
-
 class ConversorPage extends StatefulWidget {
   @override
   _ConversorPageState createState() => _ConversorPageState();
 }
 
-class _ConversorPageState extends State<ConversorPage> {
+class _ConversorPageState extends State<ConversorPage> with SingleTickerProviderStateMixin {
   final TextEditingController _realController = TextEditingController();
   double? _resultado;
   double _taxaDolar = 5.63;
+
+  late AnimationController _resultAnimationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 1. Animação Fade para o resultado
+    _resultAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _resultAnimationController, curve: Curves.easeOut),
+    );
+  }
 
   void _converter() {
     final texto = _realController.text;
@@ -60,6 +44,9 @@ class _ConversorPageState extends State<ConversorPage> {
     setState(() {
       _resultado = real / _taxaDolar;
     });
+
+    // Inicia a animação de fade quando houver resultado
+    _resultAnimationController.forward(from: 0.0);
   }
 
   void _navegarParaTemperatura() {
@@ -74,45 +61,83 @@ class _ConversorPageState extends State<ConversorPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Conversor Real para Dólar'),
-        backgroundColor: Color(0xFF64B5F6), 
+        backgroundColor: Color(0xFF64B5F6),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
               controller: _realController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'Valor em Reais (R\$)',
-                // o fundo agora é controlado globalmente no Theme
+                border: OutlineInputBorder(),
               ),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _converter,
-              child: Text('Converter para Dólar'),
-              // estilo também vem do tema global
-            ),
-            SizedBox(height: 30),
-            if (_resultado != null)
-              Text(
-                'Resultado: \$${_resultado!.toStringAsFixed(2)}',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(221, 186, 255, 95),
+
+            // Botão com efeito de escala sutil ao pressionar
+            AnimatedContainer(
+              duration: Duration(milliseconds: 200),
+              curve: Curves.easeIn,
+              child: ElevatedButton.icon(
+                onPressed: _converter,
+                icon: Icon(Icons.currency_exchange),
+                label: Text('Converter para Dólar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigoAccent,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
+            ),
+
             SizedBox(height: 30),
-            ElevatedButton(
+
+            // Resultado com animação de fade-in
+            AnimatedBuilder(
+              animation: _fadeAnimation,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _fadeAnimation.value,
+                  child: _resultado != null
+                      ? Text(
+                          'Resultado: \$${_resultado!.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(221, 57, 59, 52),
+                          ),
+                        )
+                      : Container(),
+                );
+              },
+            ),
+
+            SizedBox(height: 30),
+
+            // Botão para ir para a tela de temperatura
+            ElevatedButton.icon(
               onPressed: _navegarParaTemperatura,
-              child: Text('Ir para Conversor de Temperatura'),
-              // segue o tema global
+              icon: Icon(Icons.thermostat),
+              label: Text('Converter Temperatura'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey,
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _realController.dispose();
+    _resultAnimationController.dispose();
+    super.dispose();
   }
 }
