@@ -1,4 +1,4 @@
-// temperatura_screen.dart
+// lib/temperatura_screen.dart
 import 'package:flutter/material.dart';
 
 class TemperaturaScreen extends StatefulWidget {
@@ -7,20 +7,30 @@ class TemperaturaScreen extends StatefulWidget {
 }
 
 class _TemperaturaScreenState extends State<TemperaturaScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _controllerCelsius = TextEditingController();
   String _resultado = '';
 
   void _converter() {
-    if (_formKey.currentState!.validate()) {
-      // Converte a temperatura (substitui vírgula por ponto para parse)
-      final celsius = double.parse(_controllerCelsius.text.replaceAll(',', '.'));
-      final fahrenheit = (celsius * 9/5) + 32;
-      
-      setState(() {
-        _resultado = '${celsius.toStringAsFixed(1)}°C = ${fahrenheit.toStringAsFixed(1)}°F';
-      });
+    final text = _controllerCelsius.text;
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Informe uma temperatura válida.')),
+      );
+      return;
     }
+
+    final celsius = double.tryParse(text.replaceAll(',', '.'));
+    if (celsius == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Número inválido.')),
+      );
+      return;
+    }
+
+    final fahrenheit = (celsius * 9 / 5) + 32;
+    setState(() {
+      _resultado = '${celsius.toStringAsFixed(1)}°C = ${fahrenheit.toStringAsFixed(1)}°F';
+    });
   }
 
   @override
@@ -28,40 +38,33 @@ class _TemperaturaScreenState extends State<TemperaturaScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Conversor Celsius para Fahrenheit'),
+        backgroundColor: Colors.orange,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                controller: _controllerCelsius,
-                decoration: InputDecoration(labelText: 'Temperatura em Celsius (°C)'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe a temperatura';
-                  }
-                  if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                    return 'Informe um número válido';
-                  }
-                  return null;
-                },
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _controllerCelsius,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Temperatura em Celsius (°C)',
+                border: OutlineInputBorder(),
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _converter,
-                child: Text('Converter'),
-              ),
-              SizedBox(height: 20),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _converter,
+              child: Text('Converter para Fahrenheit'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            ),
+            SizedBox(height: 20),
+            if (_resultado.isNotEmpty)
               Text(
                 _resultado,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
