@@ -1,9 +1,8 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
-import 'conversor_page.dart';
+import 'splash_screen.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -12,10 +11,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Conversor de Moeda e Temperatura',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: ConversorPage(),
       debugShowCheckedModeBanner: false,
+      title: 'Conversor',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const SplashScreen(), // Inicia pela Splash
     );
   }
 }

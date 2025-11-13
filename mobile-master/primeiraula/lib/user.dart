@@ -25,7 +25,7 @@ class User {
       'name': name,
       'age': age,
       'country': country,
-      'email': email.
+      'email': email
     };
   }
 }
