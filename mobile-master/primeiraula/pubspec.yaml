@@ -1,0 +1,27 @@
+name: bd2
+description: Um app de conversão de moeda e temperatura.
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=2.19.0 <4.0.0'
+ 
+dependencies:
+  flutter:
+     sdk: flutter
+  cupertino_icons: ^1.0.2
+  sqflite: ^2.2.8+4
+  path: ^1.8.3
+  shared_preferences: ^2.2.2
+  connectivity: ^3.0.6
+
+dev_dependencies:
+  flutter_test:
+     sdk: flutter
+  flutter_lints: ^2.0.0
+ 
+flutter:
+   uses-material-design: true
+ 
