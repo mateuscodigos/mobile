@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'pages/conversor_page.dart'; // Ajuste o caminho se necessário
+import 'pages/conversor_page.dart';
+import 'splash_screen.dart'; // importe o splash
 
 void main() {
   runApp(const MyApp());
@@ -14,7 +15,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Conversor de Moedas',
       theme: ThemeData(useMaterial3: true),
-      home: const ConversorPage(),
+      home: const SplashScreen(), // agora inicia pelo splash
     );
   }
 }

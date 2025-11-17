@@ -1,9 +1,63 @@
-// TODO Implement this library.
 import 'package:bd2/historico_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controller/conversor_controller.dart';
 import '../TemperaturaScreen.dart';
+
+Widget botaoAnimado({
+  required IconData icone,
+  required String texto,
+  required Color cor1,
+  required Color cor2,
+  required VoidCallback onPressed,
+  required AnimationController controller,
+}) {
+  return GestureDetector(
+    onTapDown: (_) => controller.reverse(),
+    onTapUp: (_) => controller.forward(),
+    onTapCancel: () => controller.forward(),
+    child: AnimatedScale(
+      scale: 0.97,
+      duration: const Duration(milliseconds: 150),
+      child: Container(
+        height: 55,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [cor1, cor2]),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: cor2.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            )
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onPressed,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icone, color: Colors.white, size: 26),
+                const SizedBox(width: 10),
+                Text(
+                  texto,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
 
 class ConversorPage extends StatefulWidget {
   const ConversorPage({super.key});
@@ -14,188 +68,160 @@ class ConversorPage extends StatefulWidget {
 
 class _ConversorPageState extends State<ConversorPage>
     with SingleTickerProviderStateMixin {
-
   final controller = ConversorController();
+  final TextEditingController realController = TextEditingController();
 
-  final TextEditingController dolarController = TextEditingController();
+  double? taxaAtual;
+  double? resultado;
 
-  double? taxaAtual;     // taxa da API (R$ por 1 USD)
-  double? resultado;     // valor convertido para reais
-
-  late AnimationController _resultAnimationController;
+  late AnimationController _animController;
   late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-
-    _resultAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 400),
+    _animController = AnimationController(
       vsync: this,
+      duration: const Duration(milliseconds: 450),
     );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _resultAnimationController, curve: Curves.easeOut),
-    );
-
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(_animController);
     carregarTaxa();
   }
 
   Future<void> carregarTaxa() async {
-    double? taxa = await controller.obterTaxaAtual();
-    if (taxa != null) {
-      setState(() => taxaAtual = taxa);
-    } else {
-      setState(() => taxaAtual = 5.63);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao carregar taxa. Usando valor padrão.')),
-      );
-    }
+    final taxa = await controller.obterTaxaAtual();
+    setState(() => taxaAtual = taxa);
   }
 
-  // 🔵 Converter DÓLAR → REAL
-  void converter() {
-    if (dolarController.text.isEmpty || taxaAtual == null) {
+  void converter() async {
+    if (realController.text.isEmpty || taxaAtual == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha o valor em dólar.')),
+        const SnackBar(content: Text('Digite um valor válido.')),
       );
       return;
     }
 
-    double? valorDolar = double.tryParse(dolarController.text.replaceAll(',', '.'));
-
-    if (valorDolar == null || valorDolar <= 0) {
+    final real = double.tryParse(realController.text.replaceAll(",", "."));
+    if (real == null || real <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Insira um valor válido.')),
+        const SnackBar(content: Text('Valor inválido.')),
       );
       return;
     }
 
-    setState(() {
-      resultado = valorDolar * taxaAtual!;
-    });
+    final dolar = real / taxaAtual!;
+    setState(() => resultado = dolar);
 
-    _resultAnimationController.forward(from: 0.0);
-  }
+    _animController.forward(from: 0);
 
-  void _navegarParaTemperatura() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TemperaturaScreen()),
-    );
-  }
-
-  void _navegarParaHistorico() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => HistoricoScreen()),
-    );
+    await controller.salvarConversao(real: real, dolar: dolar);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF3F7FF),
       appBar: AppBar(
         title: const Text("Conversor API"),
-        backgroundColor: const Color(0xFF64B5F6),
+        backgroundColor: Colors.indigo,
+        elevation: 4,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-
-            // Exibe taxa da API
             if (taxaAtual == null)
               const Center(child: CircularProgressIndicator())
             else
-              Text(
-                "Cotação do dólar (API): R\$${taxaAtual!.toStringAsFixed(2)}",
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              AnimatedOpacity(
+                opacity: 1,
+                duration: const Duration(milliseconds: 600),
+                child: Text(
+                  "Cotação atual do dolar em reais: R\$ ${taxaAtual!.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                  ),
+                ),
               ),
-
-            const SizedBox(height: 20),
-
-            // Campo para digitar valor em dólar
+            const SizedBox(height: 25),
             TextField(
-              controller: dolarController,
+              controller: realController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                FilteringTextInputFormatter.allow(RegExp(r"[0-9\.,]"))
               ],
-              decoration: const InputDecoration(
-                labelText: "Valor em Dólar (\$)",
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: "Valor em Reais (R\$)",
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            ElevatedButton.icon(
+            botaoAnimado(
+              icone: Icons.currency_exchange,
+              texto: "Converter",
+              cor1: Colors.indigo,
+              cor2: Colors.indigoAccent,
               onPressed: converter,
-              icon: const Icon(Icons.currency_exchange),
-              label: const Text("Converter para Reais"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigoAccent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
+              controller: _animController,
             ),
-
-            const SizedBox(height: 30),
-
+            const SizedBox(height: 35),
             AnimatedBuilder(
               animation: _fadeAnimation,
-              builder: (context, child) {
+              builder: (_, __) {
                 return Opacity(
                   opacity: _fadeAnimation.value,
                   child: resultado != null
                       ? Text(
-                          "Resultado: R\$${resultado!.toStringAsFixed(2)}",
+                          "Resultado: \$${resultado!.toStringAsFixed(2)}",
                           style: const TextStyle(
-                            fontSize: 24,
+                            fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(221, 57, 59, 52),
+                            color: Colors.black87,
                           ),
                         )
                       : const SizedBox(),
                 );
               },
             ),
-
-            const SizedBox(height: 15),
-
-            ElevatedButton.icon(
-              onPressed: _navegarParaTemperatura,
-              icon: const Icon(Icons.thermostat),
-              label: const Text("Converter Temperatura"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey,
-                foregroundColor: Colors.white,
-              ),
+            const SizedBox(height: 30),
+            botaoAnimado(
+              icone: Icons.thermostat,
+              texto: "Converter Temperatura",
+              cor1: Colors.deepOrange,
+              cor2: Colors.orangeAccent,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const TemperaturaScreen()),
+                );
+              },
+              controller: _animController,
             ),
-
             const SizedBox(height: 15),
-
-            ElevatedButton.icon(
-              onPressed: _navegarParaHistorico,
-              icon: const Icon(Icons.history),
-              label: const Text("Ver Histórico"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
+            botaoAnimado(
+              icone: Icons.history,
+              texto: "Ver Histórico",
+              cor1: Colors.green,
+              cor2: Colors.lightGreen,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HistoricoScreen()),
+                );
+              },
+              controller: _animController,
             ),
           ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    dolarController.dispose();
-    _resultAnimationController.dispose();
-    super.dispose();
   }
 }

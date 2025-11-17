@@ -3,6 +3,62 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 
+
+Widget botaoAnimado({
+  required IconData icone,
+  required String texto,
+  required Color cor1,
+  required Color cor2,
+  required VoidCallback onPressed,
+  required AnimationController controller,
+}) {
+  return GestureDetector(
+    onTapDown: (_) => controller.reverse(),
+    onTapUp: (_) => controller.forward(),
+    onTapCancel: () => controller.forward(),
+    child: AnimatedScale(
+      scale: 0.97,
+      duration: const Duration(milliseconds: 150),
+      child: Container(
+        height: 55,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [cor1, cor2]),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: cor2.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            )
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onPressed,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icone, color: Colors.white, size: 26),
+                const SizedBox(width: 10),
+                Text(
+                  texto,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class TemperaturaScreen extends StatefulWidget {
   const TemperaturaScreen({super.key});
 
@@ -12,9 +68,10 @@ class TemperaturaScreen extends StatefulWidget {
 
 class _TemperaturaScreenState extends State<TemperaturaScreen>
     with SingleTickerProviderStateMixin {
+  
   final _controllerFahrenheit = TextEditingController();
 
-  double? temperaturaAPI; // Temperatura real em Fahrenheit vinda da API
+  double? temperaturaAPI; 
   String _resultado = '';
 
   late AnimationController _animController;
@@ -24,7 +81,6 @@ class _TemperaturaScreenState extends State<TemperaturaScreen>
   void initState() {
     super.initState();
 
-    // 🔥 Configuração da animação
     _animController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
@@ -37,7 +93,6 @@ class _TemperaturaScreenState extends State<TemperaturaScreen>
     buscarTemperaturaAPI();
   }
 
-  // 🔥 BUSCAR TEMPERATURA DA API
   Future<void> buscarTemperaturaAPI() async {
     const url =
         "https://api.open-meteo.com/v1/forecast?latitude=-27.2142&longitude=-49.6431&hourly=temperature_2m&models=metno_seamless&current=temperature_2m&temperature_unit=fahrenheit";
@@ -47,7 +102,6 @@ class _TemperaturaScreenState extends State<TemperaturaScreen>
 
       if (resposta.statusCode == 200) {
         final json = jsonDecode(resposta.body);
-
         final temp = json["current"]["temperature_2m"].toDouble();
 
         setState(() {
@@ -61,7 +115,6 @@ class _TemperaturaScreenState extends State<TemperaturaScreen>
     }
   }
 
-  // 🔥 CONVERTER Fahrenheit → Celsius
   void _converter() {
     final text = _controllerFahrenheit.text;
 
@@ -88,7 +141,7 @@ class _TemperaturaScreenState extends State<TemperaturaScreen>
           '${fahrenheit.toStringAsFixed(1)}°F = ${celsius.toStringAsFixed(1)}°C';
     });
 
-    _animController.forward(from: 0.0); // animação
+    _animController.forward(from: 0.0); 
   }
 
   @override
@@ -98,25 +151,39 @@ class _TemperaturaScreenState extends State<TemperaturaScreen>
         title: const Text('Conversor Fahrenheit → Celsius (API)'),
         backgroundColor: Colors.deepOrange,
       ),
-      body: Padding(
+      body: 
+      Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔥 Temperatura atual da API
-            temperaturaAPI == null
-                ? const Center(child: CircularProgressIndicator())
-                : Text(
-                    "Temperatura atual (API): ${temperaturaAPI!.toStringAsFixed(1)}°F",
-                    style: const TextStyle(
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 6,
+                    offset: Offset(0, 3),
+                  )
+                ],
+              ),
+              child: temperaturaAPI == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : Text(
+                      "Temperatura atual (API): ${temperaturaAPI!.toStringAsFixed(1)}°F",
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.red),
-                  ),
+                        color: Colors.deepOrange,
+                      ),
+                    ),
+            ),
 
             const SizedBox(height: 25),
 
-            // 🔵 Campo de entrada Fahrenheit
             TextField(
               controller: _controllerFahrenheit,
               keyboardType:
@@ -124,28 +191,31 @@ class _TemperaturaScreenState extends State<TemperaturaScreen>
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
               ],
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Temperatura em Fahrenheit (°F)',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide:
+                      const BorderSide(color: Colors.deepOrange, width: 2),
+                ),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // 🔘 Botão Converter
-            ElevatedButton(
+            botaoAnimado(
+              icone: Icons.swap_vert,
+              texto: "Converter para Celsius",
+              cor1: Colors.deepOrange,
+              cor2: Colors.orangeAccent,
               onPressed: _converter,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepOrange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text('Converter para Celsius'),
+              controller: _animController,
             ),
 
             const SizedBox(height: 30),
 
-            // ✨ Resultado com animação
             AnimatedBuilder(
               animation: _fadeAnimation,
               builder: (context, child) {
@@ -155,7 +225,7 @@ class _TemperaturaScreenState extends State<TemperaturaScreen>
                       ? Text(
                           _resultado,
                           style: const TextStyle(
-                            fontSize: 22,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
                           ),
