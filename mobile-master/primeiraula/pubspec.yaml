@@ -7,21 +7,22 @@ version: 1.0.0+1
 
 environment:
   sdk: '>=2.19.0 <4.0.0'
- 
+
 dependencies:
   flutter:
-     sdk: flutter
+    sdk: flutter
+
+  http: ^1.2.2            # Para requisições HTTP (API de conversão)
+
   cupertino_icons: ^1.0.2
-  sqflite: ^2.2.8+4
-  path: ^1.8.3
+  sqflite: ^2.3.0         # Banco de dados local
+  path: ^1.8.3            # Caminho para o DB
   shared_preferences: ^2.2.2
-  connectivity: ^3.0.6
+  connectivity: ^3.0.6    # Verificar conexão de internet
 
 dev_dependencies:
   flutter_test:
-     sdk: flutter
+    sdk: flutter
+
   flutter_lints: ^2.0.0
- 
-flutter:
-   uses-material-design: true
- 
+
